@@ -1,8 +1,185 @@
-# dss-codec-wasm
+# dss-codec
 
-WASM packaging project for the DSS / DS2 codec, using `ext/dss-codec` as a git submodule for the core Rust decoder.
+`dss-codec` is a WASM-based decoder for Olympus `.dss` and `.ds2` dictation audio files. It works in browser and Node.js environments and can decode encrypted DS2 input when a password is provided.
 
-This repo publishes the npm package `dss-codec`.
+For codec internals and deeper technical background, see [`ext/dss-codec/README.md`](./ext/dss-codec/README.md) and [`ext/dss-codec/dss-codec/CODEC_SPECIFICATION.md`](./ext/dss-codec/dss-codec/CODEC_SPECIFICATION.md).
+
+## Capabilities
+
+| Input | Machine-readable `format` | Native rate | Notes |
+|-------|----------------------------|-------------|-------|
+| `.dss` | `dss_sp` | 11025 Hz | DSS SP |
+| `.ds2` standard-play | `ds2_sp` | 12000 Hz | DS2 SP |
+| `.ds2` quality-play | `ds2_qp` | 16000 Hz | DS2 QP |
+| Encrypted `.ds2` | `ds2_sp` or `ds2_qp` after inspection/decode | 12000 or 16000 Hz | Password required for decode or decrypt |
+
+- `inspect(...)` reports `format`, `nativeRate`, and `encryption`.
+- `encryption` is a stable machine-readable identifier such as `none`, `ds2_aes_128`, or `ds2_aes_256`.
+- Decoded audio exposed to JavaScript is mono `Float32Array` PCM normalized to `[-1.0, 1.0]`.
+- `decrypt(...)` and `decryptWithPassword(...)` return plain container bytes. For encrypted DS2 input, this normalizes back to plain `.ds2` bytes.
+
+## Install
+
+```bash
+npm install dss-codec
+```
+
+- Node.js `>=18` is required.
+- The package ships entrypoints for bundlers, browser apps, direct browser module loading, and Node.js consumers.
+
+## Demo
+
+The repository includes a plain HTML reference integration in [`examples/simple-html`](./examples/simple-html). It inspects DSS and DS2 files in the browser, prompts for a password when needed, decodes to PCM, builds a WAV for playback, and draws a waveform locally in the browser.
+
+- Local demo: `npm run demo`
+- Hosted demo: <https://gaspardpetit.github.io/dss-codec-wasm/>
+- Standalone demo build: `npm run build:standalone`
+
+## Quick Start
+
+```ts
+import { readFile } from "node:fs/promises";
+import { decode, decodeWithPassword, inspect } from "dss-codec";
+
+const bytes = new Uint8Array(await readFile("recording.ds2"));
+const inspection = inspect(bytes);
+
+try {
+  const password =
+    inspection.encryption === "none"
+      ? undefined
+      : new TextEncoder().encode("1234");
+
+  const result = password
+    ? decodeWithPassword(bytes, password)
+    : decode(bytes);
+
+  try {
+    console.log(result.format);      // "dss_sp" | "ds2_sp" | "ds2_qp"
+    console.log(result.nativeRate);  // 11025 | 12000 | 16000
+    console.log(result.samples);     // Float32Array mono PCM in [-1, 1]
+  } finally {
+    result.free();
+  }
+} finally {
+  inspection.free();
+}
+```
+
+Use `inspect(...)` first when the caller may receive a mix of plain and encrypted inputs. If the source is encrypted, pass password bytes to `decodeWithPassword(...)`.
+
+## Entrypoints
+
+- `dss-codec`: default package entry for Node.js and most bundler/browser usage.
+- `dss-codec/web`: browser-oriented entry with explicit async `init(...)` control for WASM loading.
+- `dss-codec/wasm`: public WASM asset export for toolchains that need the `.wasm` file URL explicitly.
+
+## Bundlers And Workers
+
+`dss-codec/web` already falls back to runtime-relative WASM loading with `new URL("dss_codec_wasm_bg.wasm", import.meta.url)`. Some worker and bundler setups handle dependency assets more reliably when the WASM file is imported explicitly:
+
+```ts
+import init, { decode } from "dss-codec/web";
+import wasmUrl from "dss-codec/wasm?url";
+
+await init(wasmUrl);
+
+const result = decode(fileBytes);
+try {
+  console.log(result.nativeRate);
+} finally {
+  result.free();
+}
+```
+
+For direct browser module usage without a bundler, import from `dss-codec/web` and await `init(...)` before calling the decode APIs.
+
+## API Overview
+
+### Inspection
+
+- `inspect(data: Uint8Array) -> InspectResult`
+- `isEncryptedDs2(data: Uint8Array) -> boolean`
+
+`InspectResult` exposes:
+
+- `format: string`
+- `nativeRate: number`
+- `encryption: string`
+
+### Full Decode
+
+- `decode(data: Uint8Array) -> DecodeResult`
+- `decodeWithPassword(data: Uint8Array, password: Uint8Array) -> DecodeResult`
+
+`DecodeResult` exposes:
+
+- `format: string`
+- `nativeRate: number`
+- `samples: Float32Array`
+
+### Container Decryption
+
+- `decrypt(data: Uint8Array) -> Uint8Array`
+- `decryptWithPassword(data: Uint8Array, password: Uint8Array) -> Uint8Array`
+
+These APIs return plain container bytes. They are useful when the caller needs normalized `.ds2` bytes instead of decoded PCM.
+
+### Streaming Decode
+
+- `new StreamDecoder()`
+- `StreamDecoder.withPassword(password: Uint8Array)`
+- `streamer.push(chunk: Uint8Array) -> Float32Array`
+- `streamer.finish() -> Float32Array`
+- `streamer.format -> string | undefined`
+- `streamer.nativeRate -> number | undefined`
+
+```ts
+import { StreamDecoder, inspect } from "dss-codec";
+
+const header = fileChunks[0];
+const inspection = inspect(header);
+
+let streamer;
+try {
+  streamer =
+    inspection.encryption === "none"
+      ? new StreamDecoder()
+      : StreamDecoder.withPassword(new TextEncoder().encode("1234"));
+} finally {
+  inspection.free();
+}
+
+const pcmChunks = [];
+
+try {
+  for (const chunk of fileChunks) {
+    const samples = streamer.push(chunk);
+    if (samples.length > 0) {
+      pcmChunks.push(samples);
+    }
+
+    console.log(streamer.format);      // may be undefined until enough input is buffered
+    console.log(streamer.nativeRate);  // may be undefined until format detection completes
+  }
+
+  const tail = streamer.finish();
+  if (tail.length > 0) {
+    pcmChunks.push(tail);
+  }
+} finally {
+  streamer.free();
+}
+```
+
+## Returned Data And Integration Notes
+
+- `DecodeResult` and `InspectResult` are WASM-backed objects. Read their properties, then call `free()` when finished.
+- Password-taking APIs expect password bytes, not a JavaScript string. Use `new TextEncoder().encode(passwordString)` when needed.
+- `nativeRate` is the source format's native sample rate. The package does not resample during JavaScript decode.
+- Decoded samples are always mono PCM. Convert or resample them in application code if a downstream system requires another layout.
+- `inspect(...)` is useful when deciding whether to call `decode(...)` or `decodeWithPassword(...)`.
+
 
 ## Development
 
@@ -13,7 +190,7 @@ Prerequisites:
 - Node.js 18+
 - The `ext/dss-codec` git submodule checked out locally
 
-Build the package artifacts:
+Build package artifacts:
 
 ```bash
 git submodule update --init --recursive
@@ -27,107 +204,12 @@ This generates:
 
 - `dist/browser` for bundlers and browser apps
 - `dist/node` for Node.js consumers
-- `dist/web` for direct browser `<script type="module">` usage without a bundler
+- `dist/web` for direct browser module usage with explicit `init(...)`
 
-Before publishing, verify the packed npm artifact exactly as consumers will install it:
+Verify the packed npm artifact as installed by consumers:
 
 ```bash
 npm run test:pack
 ```
 
-## Release
-
-The npm publish workflow uses Git tags like `v1.0.0` as the release version source of truth.
-
-1. Configure npm trusted publishing for this repository and the workflow file `.github/workflows/publish-npm.yml`.
-2. Create and push a semver tag:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-On tag push, GitHub Actions will:
-
-- read the version from the Git tag with `npm version from-git --no-git-tag-version`
-- build the WASM package
-- publish `dss-codec` to npm
-
-The repository `package.json` still needs a valid development version checked in, but the publish job uses the Git tag as the authoritative release version.
-
-## In-Browser Demo
-
-The repo includes a plain HTML demo in [`examples/simple-html`](./examples/simple-html) that:
-
-- opens `.dss` and `.ds2` files in the browser
-- inspects the file format and encryption mode
-- prompts for a password when the file is encrypted
-- decodes the audio to PCM
-- generates a playable WAV in the browser
-- draws a waveform on a canvas
-- keeps all inspection, decryption, decoding, and WAV generation local in the browser with no external upload or processing
-
-Run it locally:
-
-```bash
-npm run demo
-```
-
-Then open `http://127.0.0.1:4173/examples/simple-html/`.
-Do not open `examples/simple-html/index.html` directly with `file://`; browser module and WASM loading will be blocked there.
-
-The live hosted demo is available at:
-
-`https://gaspardpetit.github.io/dss-codec-wasm/`
-
-The GitHub Pages workflow publishes the standalone demo at that site root.
-
-For a single self-contained HTML artifact, build:
-
-```bash
-npm run build:standalone
-```
-
-This writes [`dist/standalone/in-browser-demo.html`](./dist/standalone/in-browser-demo.html), which inlines the page, styles, app logic, and WASM bytes into one file.
-
-## Package API
-
-- `inspect(data: Uint8Array)`
-- `decode(data: Uint8Array)`
-- `decodeWithPassword(data: Uint8Array, password: Uint8Array)`
-- `decrypt(data: Uint8Array)`
-- `decryptWithPassword(data: Uint8Array, password: Uint8Array)`
-- `isEncryptedDs2(data: Uint8Array)`
-- `new StreamDecoder()`
-- `StreamDecoder.withPassword(password: Uint8Array)`
-- `streamer.push(chunk: Uint8Array)`
-- `streamer.finish()`
-- `streamer.format`
-- `streamer.nativeRate`
-
-Decoded samples exposed to JavaScript are normalized mono `Float32Array` values in `[-1.0, 1.0]`.
-
-### Streaming Example
-
-```ts
-import { StreamDecoder, inspect } from "dss-codec";
-
-const info = inspect(headerBytes);
-const streamer =
-  info.encryption === "none"
-    ? new StreamDecoder()
-    : StreamDecoder.withPassword(passwordBytes);
-
-const chunks: Float32Array[] = [];
-for (const chunk of fileChunks) {
-  const samples = streamer.push(chunk);
-  if (samples.length > 0) {
-    chunks.push(samples);
-  }
-}
-
-const tail = streamer.finish();
-if (tail.length > 0) {
-  chunks.push(tail);
-}
-```
+Publishing is tag-driven. The npm publish workflow uses Git tags such as `v1.0.0` as the release version source of truth.

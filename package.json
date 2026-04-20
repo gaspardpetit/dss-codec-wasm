@@ -22,6 +22,9 @@
     "./web": {
       "types": "./dist/web/dss_codec_wasm.d.ts",
       "default": "./dist/web/dss_codec_wasm.js"
+    },
+    "./wasm": {
+      "default": "./dist/web/dss_codec_wasm_bg.wasm"
     }
   },
   "main": "./dist/node/dss_codec_wasm.cjs",
