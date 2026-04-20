@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dss-codec In-Browser Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">dss-codec</p>
+        <h1>DSS / DS2 In-Browser Demo</h1>
+        <p class="lede">
+          Load a `.dss` or `.ds2` file, detect encryption, optionally unlock it with a
+          password, render its waveform, and play the generated WAV directly in the browser.
+          All inspection, decryption, decoding, and WAV generation happen locally on your
+          device with no external upload or processing.
+        </p>
+      </section>
+
+      <section class="panel controls">
+        <label class="file-picker">
+          <span>Select DSS or DS2</span>
+          <input id="file-input" type="file" accept=".dss,.ds2,application/octet-stream" />
+        </label>
+
+        <div id="runtime-note" class="runtime-note hidden">
+          This demo must be served over HTTP. Run <code>npm run demo</code> and open
+          <code>http://127.0.0.1:4173/examples/simple-html/</code>.
+        </div>
+
+        <div id="password-panel" class="password-panel hidden">
+          <label for="password-input">Password</label>
+          <input id="password-input" type="password" autocomplete="current-password" />
+          <button id="decode-button" type="button">Unlock and Decode</button>
+        </div>
+
+        <div id="progress-panel" class="progress-panel hidden" aria-live="polite">
+          <div class="progress-copy">
+            <span>Decode Progress</span>
+            <span id="progress-text">0%</span>
+          </div>
+          <progress id="decode-progress" max="1" value="0"></progress>
+        </div>
+
+        <p id="status" class="status">Loading WASM runtime...</p>
+      </section>
+
+      <section class="panel details">
+        <div class="detail">
+          <span class="label">File</span>
+          <span id="detail-file">None</span>
+        </div>
+        <div class="detail">
+          <span class="label">Format</span>
+          <span id="detail-format">-</span>
+        </div>
+        <div class="detail">
+          <span class="label">Encryption</span>
+          <span id="detail-encryption">-</span>
+        </div>
+        <div class="detail">
+          <span class="label">Sample Rate</span>
+          <span id="detail-rate">-</span>
+        </div>
+        <div class="detail">
+          <span class="label">Duration</span>
+          <span id="detail-duration">-</span>
+        </div>
+      </section>
+
+      <section class="panel waveform-panel">
+        <div class="panel-header">
+          <h2>Waveform</h2>
+          <a id="download-link" class="download disabled" href="#" download>Download WAV</a>
+        </div>
+        <canvas id="waveform" width="960" height="280"></canvas>
+      </section>
+
+      <section class="panel player-panel">
+        <h2>Playback</h2>
+        <audio id="audio-player" controls preload="metadata"></audio>
+      </section>
+    </main>
+
+    <script src="./boot.js"></script>
+  </body>
+</html>

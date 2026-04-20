@@ -1,0 +1,58 @@
+{
+  "name": "dss-codec",
+  "version": "0.1.0",
+  "description": "Browser and Node.js WASM decoder for Olympus DSS and DS2 audio, including encrypted DS2 decryption",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/browser/dss_codec_wasm.d.ts",
+      "browser": "./dist/browser/dss_codec_wasm.js",
+      "node": "./dist/node/index.js",
+      "import": "./dist/browser/dss_codec_wasm.js",
+      "require": "./dist/node/dss_codec_wasm.cjs",
+      "default": "./dist/browser/dss_codec_wasm.js"
+    },
+    "./web": {
+      "types": "./dist/web/dss_codec_wasm.d.ts",
+      "default": "./dist/web/dss_codec_wasm.js"
+    }
+  },
+  "main": "./dist/node/dss_codec_wasm.cjs",
+  "module": "./dist/browser/dss_codec_wasm.js",
+  "types": "./dist/browser/dss_codec_wasm.d.ts",
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "build:site": "npm run build && node ./scripts/build-site.mjs",
+    "build:standalone": "npm run build && node ./scripts/build-standalone-demo.mjs",
+    "demo": "npm run build && node ./scripts/serve-demo.mjs",
+    "prepack": "npm run build",
+    "test:pack": "node ./scripts/smoke-test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://github.com/gaspardpetit/dss-codec-wasm#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gaspardpetit/dss-codec-wasm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gaspardpetit/dss-codec-wasm/issues"
+  },
+  "keywords": [
+    "dss",
+    "ds2",
+    "dictation",
+    "audio",
+    "codec",
+    "decoder",
+    "wasm"
+  ]
+}

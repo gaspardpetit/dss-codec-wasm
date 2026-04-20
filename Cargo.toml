@@ -1,0 +1,15 @@
+[package]
+name = "dss-codec-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM wrapper for DSS/DS2 decoding and encrypted DS2 decryption"
+license = "MIT"
+homepage = "https://github.com/gaspardpetit/dss-codec-wasm"
+repository = "https://github.com/gaspardpetit/dss-codec-wasm"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+dss-codec-core = { package = "dss-codec", path = "ext/dss-codec/dss-codec" }
+wasm-bindgen = "0.2"
