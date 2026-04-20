@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           submodules: recursive
@@ -27,15 +27,10 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
-
-      - name: Upgrade npm for trusted publishing
-        run: |
-          npm install -g npm@latest
-          npm --version
 
       - name: Cache cargo installs
         uses: Swatinem/rust-cache@v2
@@ -47,4 +42,6 @@ jobs:
         run: npm version from-git --no-git-tag-version
 
       - name: Publish package to npm
-        run: npm publish
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
