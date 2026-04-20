@@ -76,7 +76,11 @@ npm run demo
 Then open `http://127.0.0.1:4173/examples/simple-html/`.
 Do not open `examples/simple-html/index.html` directly with `file://`; browser module and WASM loading will be blocked there.
 
-For a repo-hosted version, the GitHub Pages workflow builds a static site from `dist/web` plus the demo page and publishes it from the repository.
+The live hosted demo is available at:
+
+`https://gaspardpetit.github.io/dss-codec-wasm/`
+
+The GitHub Pages workflow publishes the standalone demo at that site root.
 
 For a single self-contained HTML artifact, build:
 
