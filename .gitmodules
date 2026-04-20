@@ -1,0 +1,3 @@
+[submodule "ext/dss-codec"]
+	path = ext/dss-codec
+	url = https://github.com/gaspardpetit/dss-codec.git
