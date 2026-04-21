@@ -1,3 +1,6 @@
+[![Package Smoke Test](https://github.com/gaspardpetit/dss-codec-wasm/actions/workflows/package-smoke-test.yml/badge.svg)](https://github.com/gaspardpetit/dss-codec-wasm/actions/workflows/package-smoke-test.yml)![NPM Version](https://img.shields.io/npm/v/dss-codec)
+
+
 # dss-codec
 
 Web Assembly of [gaspardpetit/dss-codec](https://github.com/gaspardpetit/dss-codec)
