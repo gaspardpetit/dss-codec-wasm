@@ -2,7 +2,7 @@
 
 `dss-codec` is a WASM-based decoder for Olympus `.dss` and `.ds2` dictation audio files. It works in browser and Node.js environments and can decode encrypted DS2 input when a password is provided.
 
-For codec internals and deeper technical background, see [`ext/dss-codec/README.md`](./ext/dss-codec/README.md) and [`ext/dss-codec/dss-codec/CODEC_SPECIFICATION.md`](./ext/dss-codec/dss-codec/CODEC_SPECIFICATION.md).
+For codec internals and deeper technical background, see [`dss-codec/README.md`](https://github.com/gaspardpetit/dss-codec/blob/master/dss-codec/README.md) and [`dss-codec/CODEC_SPECIFICATION.md`](https://github.com/gaspardpetit/dss-codec/blob/master/dss-codec/CODEC_SPECIFICATION.md).
 
 ## Capabilities
 
@@ -29,10 +29,11 @@ npm install dss-codec
 
 ## Demo
 
+- Hosted demo: <https://gaspardpetit.github.io/dss-codec-wasm/>
+
 The repository includes a plain HTML reference integration in [`examples/simple-html`](./examples/simple-html). It inspects DSS and DS2 files in the browser, prompts for a password when needed, decodes to PCM, builds a WAV for playback, and draws a waveform locally in the browser.
 
 - Local demo: `npm run demo`
-- Hosted demo: <https://gaspardpetit.github.io/dss-codec-wasm/>
 - Standalone demo build: `npm run build:standalone`
 
 ## Quick Start
