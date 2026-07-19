@@ -1,6 +1,8 @@
 use dss_codec_core::crypto::ds2_encrypted::ENCRYPTED_MAGIC;
 use dss_codec_core::streaming::DecryptingDecoderStreamer;
-use dss_codec_core::{decode_to_buffer, decode_to_buffer_with_password, decrypt_to_bytes, inspect_bytes};
+use dss_codec_core::{
+    decode_to_buffer, decode_to_buffer_with_password, decrypt_to_bytes, inspect_bytes,
+};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -107,6 +109,8 @@ fn format_name(format: dss_codec_core::demux::AudioFormat) -> String {
         dss_codec_core::demux::AudioFormat::DssSp => "dss_sp".to_string(),
         dss_codec_core::demux::AudioFormat::Ds2Sp => "ds2_sp".to_string(),
         dss_codec_core::demux::AudioFormat::Ds2Qp => "ds2_qp".to_string(),
+        dss_codec_core::demux::AudioFormat::Ds2Qp7 => "ds2_qp7".to_string(),
+        dss_codec_core::demux::AudioFormat::GrundigSp => "grundig_sp".to_string(),
     }
 }
 
@@ -171,10 +175,7 @@ pub fn decode_wasm(data: &[u8]) -> Result<DecodeResult, JsValue> {
 }
 
 #[wasm_bindgen(js_name = decodeWithPassword)]
-pub fn decode_with_password_wasm(
-    data: &[u8],
-    password: &[u8],
-) -> Result<DecodeResult, JsValue> {
+pub fn decode_with_password_wasm(data: &[u8], password: &[u8]) -> Result<DecodeResult, JsValue> {
     decode_to_buffer_with_password(data, Some(password))
         .map(to_wasm_decode_result)
         .map_err(to_js_error)
@@ -187,7 +188,17 @@ pub fn is_encrypted_ds2_wasm(data: &[u8]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_pcm_sample;
+    use super::{format_name, normalize_pcm_sample};
+    use dss_codec_core::demux::AudioFormat;
+
+    #[test]
+    fn all_audio_formats_have_stable_js_names() {
+        assert_eq!(format_name(AudioFormat::DssSp), "dss_sp");
+        assert_eq!(format_name(AudioFormat::Ds2Sp), "ds2_sp");
+        assert_eq!(format_name(AudioFormat::Ds2Qp), "ds2_qp");
+        assert_eq!(format_name(AudioFormat::Ds2Qp7), "ds2_qp7");
+        assert_eq!(format_name(AudioFormat::GrundigSp), "grundig_sp");
+    }
 
     #[test]
     fn pcm_samples_are_normalized_for_js() {
