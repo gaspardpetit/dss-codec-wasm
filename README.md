@@ -15,10 +15,12 @@ For codec internals and deeper technical background, see [`dss-codec/README.md`]
 
 | Input | Machine-readable `format` | Native rate | Notes |
 |-------|----------------------------|-------------|-------|
-| `.dss` | `dss_sp` | 11025 Hz | DSS SP |
+| Olympus `.dss` | `dss_sp` | 11025 Hz | DSS SP |
+| Grundig/PH9607 `.dss` | `grundig_sp` | 16000 Hz | Grundig DSS SP |
 | `.ds2` standard-play | `ds2_sp` | 12000 Hz | DS2 SP |
-| `.ds2` quality-play | `ds2_qp` | 16000 Hz | DS2 QP |
-| Encrypted `.ds2` | `ds2_sp` or `ds2_qp` after inspection/decode | 12000 or 16000 Hz | Password required for decode or decrypt |
+| `.ds2` quality-play mode 6 | `ds2_qp` | 16000 Hz | DS2 QP |
+| `.ds2` quality-play mode 7 | `ds2_qp7` | 16000 Hz | DS2 QP7 |
+| Encrypted `.ds2` | A corresponding `ds2_*` format after inspection/decode | 12000 or 16000 Hz | Password required for decode or decrypt |
 
 - `inspect(...)` reports `format`, `nativeRate`, and `encryption`.
 - `encryption` is a stable machine-readable identifier such as `none`, `ds2_aes_128`, or `ds2_aes_256`.
@@ -63,7 +65,7 @@ try {
     : decode(bytes);
 
   try {
-    console.log(result.format);      // "dss_sp" | "ds2_sp" | "ds2_qp"
+    console.log(result.format);      // "dss_sp" | "grundig_sp" | "ds2_sp" | "ds2_qp" | "ds2_qp7"
     console.log(result.nativeRate);  // 11025 | 12000 | 16000
     console.log(result.samples);     // Float32Array mono PCM in [-1, 1]
   } finally {
