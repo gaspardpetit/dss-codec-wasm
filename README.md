@@ -203,7 +203,7 @@ Build package artifacts:
 ```bash
 git submodule update --init --recursive
 rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli
+cargo install wasm-bindgen-cli --version 0.2.126
 
 npm run build
 ```
