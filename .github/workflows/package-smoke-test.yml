@@ -31,7 +31,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli --version 0.2.118
+        run: cargo install wasm-bindgen-cli --version 0.2.126
 
       - name: Smoke test packed npm package
         run: npm run test:pack
